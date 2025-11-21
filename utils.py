@@ -95,7 +95,7 @@ def get_latest_model(model_dir):
     return None
 
 
-def visualize_policy(policy, board_size=15, save_path=None):
+def visualize_policy(policy, board_size=None, save_path=None):
     """
     可视化策略分布
     Args:
@@ -103,6 +103,9 @@ def visualize_policy(policy, board_size=15, save_path=None):
         board_size: 棋盘大小
         save_path: 保存路径
     """
+    if board_size is None:
+        board_size = Config.BOARD_SIZE
+    
     policy_map = policy.reshape(board_size, board_size)
     
     plt.figure(figsize=(8, 8))
@@ -162,7 +165,9 @@ if __name__ == "__main__":
     # 测试工具函数
     from network import AlphaZeroNet
     
-    model = AlphaZeroNet(board_size=15, num_channels=64, num_res_blocks=3)
+    model = AlphaZeroNet(board_size=Config.BOARD_SIZE, 
+                        num_channels=Config.NUM_CHANNELS, 
+                        num_res_blocks=Config.NUM_RES_BLOCKS)
     count_model_parameters(model)
     
     # 测试策略可视化

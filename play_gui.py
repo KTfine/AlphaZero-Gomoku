@@ -8,15 +8,16 @@ import pygame
 import numpy as np
 from gomoku_game import GomokuGame
 from mcts import MCTS, PureMCTS
+from config import Config
 
 
 class GomokuGUI:
     """五子棋GUI界面"""
     
-    def __init__(self, board_size=15, model=None):
+    def __init__(self, board_size=None, model=None):
         pygame.init()
         
-        self.board_size = board_size
+        self.board_size = board_size if board_size is not None else Config.BOARD_SIZE
         self.cell_size = 40
         self.margin = 50
         self.board_width = self.cell_size * (board_size - 1)
@@ -236,7 +237,9 @@ def play_with_model(model_path=None):
         from network import AlphaZeroNet
         
         print(f"加载模型: {model_path}")
-        model = AlphaZeroNet(board_size=15, num_channels=128, num_res_blocks=6)
+        model = AlphaZeroNet(board_size=Config.BOARD_SIZE, 
+                            num_channels=Config.NUM_CHANNELS, 
+                            num_res_blocks=Config.NUM_RES_BLOCKS)
         checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()
@@ -245,7 +248,7 @@ def play_with_model(model_path=None):
         print("使用纯MCTS（未加载神经网络）")
     
     # 启动GUI
-    gui = GomokuGUI(board_size=15, model=model)
+    gui = GomokuGUI(board_size=Config.BOARD_SIZE, model=model)
     gui.run()
 
 

@@ -7,6 +7,7 @@ import numpy as np
 from gomoku_game import GomokuGame
 from network import AlphaZeroNet
 from mcts import MCTS, PureMCTS
+from config import Config
 
 
 class Evaluator:
@@ -39,7 +40,7 @@ class Evaluator:
         Returns:
             winner: 1(agent1胜), -1(agent2胜), 0(平局)
         """
-        game = GomokuGame()
+        game = GomokuGame(Config.BOARD_SIZE)
         
         # 确定哪个agent先手
         if agent1_first:
@@ -128,7 +129,9 @@ def compare_models(model_path1, model_path2=None, num_games=20, num_simulations=
     print("加载模型...")
     
     # 加载模型1
-    model1 = AlphaZeroNet(board_size=15)
+    model1 = AlphaZeroNet(board_size=Config.BOARD_SIZE,
+                         num_channels=Config.NUM_CHANNELS,
+                         num_res_blocks=Config.NUM_RES_BLOCKS)
     checkpoint1 = torch.load(model_path1, map_location='cpu', weights_only=False)
     model1.load_state_dict(checkpoint1['model_state_dict'])
     model1.eval()
@@ -137,7 +140,9 @@ def compare_models(model_path1, model_path2=None, num_games=20, num_simulations=
     # 加载模型2
     model2 = None
     if model_path2 is not None:
-        model2 = AlphaZeroNet(board_size=15)
+        model2 = AlphaZeroNet(board_size=Config.BOARD_SIZE,
+                             num_channels=Config.NUM_CHANNELS,
+                             num_res_blocks=Config.NUM_RES_BLOCKS)
         checkpoint2 = torch.load(model_path2, map_location='cpu', weights_only=False)
         model2.load_state_dict(checkpoint2['model_state_dict'])
         model2.eval()
@@ -162,14 +167,16 @@ def play_against_human(model_path, human_first=True, num_simulations=100):
         num_simulations: MCTS模拟次数
     """
     print("加载模型...")
-    model = AlphaZeroNet(board_size=15)
+    model = AlphaZeroNet(board_size=Config.BOARD_SIZE,
+                        num_channels=Config.NUM_CHANNELS,
+                        num_res_blocks=Config.NUM_RES_BLOCKS)
     checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     print("模型加载成功！\n")
     
     ai = MCTS(model, num_simulations=num_simulations, temperature=0)
-    game = GomokuGame()
+    game = GomokuGame(Config.BOARD_SIZE)
     
     human_player = 1 if human_first else -1
     

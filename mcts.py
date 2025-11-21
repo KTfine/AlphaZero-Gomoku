@@ -157,10 +157,8 @@ class MCTS:
                     # 从当前玩家视角
                     value = 1 if winner == node.game.current_player else -1
             
-            # 3. Backup: 回溯更新
-            for node in reversed(search_path):
-                node.update(value)
-                value = -value
+            # 3. Backup: 回溯更新（使用叶子节点的backup方法）
+            node.backup(value)
         
         # 根据访问次数生成策略
         return self._get_policy(root)

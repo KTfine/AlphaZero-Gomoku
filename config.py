@@ -10,7 +10,7 @@ class Config:
     """AlphaZero五子棋配置"""
     
     # ========== 游戏设置 ==========
-    BOARD_SIZE = 15
+    BOARD_SIZE = 9
     
     # ========== 网络设置 ==========
     NUM_CHANNELS = 64  # GPU版增加到128通道

@@ -25,13 +25,34 @@ class SelfPlayBuffer:
         self.buffer.append((state, policy, value))
     
     def sample(self, batch_size):
-        """随机采样一批数据"""
+        """随机采样一批数据（带数据增强）"""
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
         batch = [self.buffer[i] for i in indices]
         
         states = np.array([x[0] for x in batch])
         policies = np.array([x[1] for x in batch])
         values = np.array([x[2] for x in batch])
+        
+        # 数据增强：随机旋转和翻转
+        for i in range(len(states)):
+            # 随机旋转 0°/90°/180°/270°
+            k = np.random.randint(0, 4)
+            if k > 0:
+                # 旋转状态（所有通道）
+                states[i] = np.rot90(states[i], k=k, axes=(0, 1))
+                # 旋转策略
+                policy_2d = policies[i].reshape(15, 15)
+                policy_2d = np.rot90(policy_2d, k=k)
+                policies[i] = policy_2d.flatten()
+            
+            # 随机水平翻转（50%概率）
+            if np.random.random() < 0.5:
+                # 翻转状态
+                states[i] = np.flip(states[i], axis=1).copy()
+                # 翻转策略
+                policy_2d = policies[i].reshape(15, 15)
+                policy_2d = np.flip(policy_2d, axis=1)
+                policies[i] = policy_2d.flatten().copy()
         
         return states, policies, values
     

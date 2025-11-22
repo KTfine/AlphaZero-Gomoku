@@ -12,20 +12,26 @@ from collections import deque
 from gomoku_game import GomokuGame
 from network import AlphaZeroNet, AlphaZeroLoss
 from mcts import MCTS
+from config import Config
 
 
 class SelfPlayBuffer:
-    """自对弈数据缓冲区"""
+    """自对弈数据缓冲区
+    增加对棋盘大小的记录，确保数据增强时不使用硬编码尺寸。
+    """
     
-    def __init__(self, max_size=10000):
+    def __init__(self, max_size=10000, board_size=15):
         self.buffer = deque(maxlen=max_size)
+        self.board_size = board_size
         
     def add(self, state, policy, value):
         """添加训练样本"""
         self.buffer.append((state, policy, value))
     
     def sample(self, batch_size):
-        """随机采样一批数据（带数据增强）"""
+        """随机采样一批数据（带数据增强）
+        使用 self.board_size 动态确定策略向量的 reshape 维度，避免硬编码。
+        """
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
         batch = [self.buffer[i] for i in indices]
         
@@ -33,24 +39,18 @@ class SelfPlayBuffer:
         policies = np.array([x[1] for x in batch])
         values = np.array([x[2] for x in batch])
         
+        bsize = self.board_size
         # 数据增强：随机旋转和翻转
         for i in range(len(states)):
-            # 随机旋转 0°/90°/180°/270°
-            k = np.random.randint(0, 4)
+            k = np.random.randint(0, 4)  # 随机旋转次数
             if k > 0:
-                # 旋转状态（所有通道）
                 states[i] = np.rot90(states[i], k=k, axes=(0, 1))
-                # 旋转策略
-                policy_2d = policies[i].reshape(15, 15)
+                policy_2d = policies[i].reshape(bsize, bsize)
                 policy_2d = np.rot90(policy_2d, k=k)
                 policies[i] = policy_2d.flatten()
-            
-            # 随机水平翻转（50%概率）
-            if np.random.random() < 0.5:
-                # 翻转状态
+            if np.random.random() < 0.5:  # 随机水平翻转
                 states[i] = np.flip(states[i], axis=1).copy()
-                # 翻转策略
-                policy_2d = policies[i].reshape(15, 15)
+                policy_2d = policies[i].reshape(bsize, bsize)
                 policy_2d = np.flip(policy_2d, axis=1)
                 policies[i] = policy_2d.flatten().copy()
         
@@ -80,8 +80,8 @@ class AlphaZeroTrainer:
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         self.loss_fn = AlphaZeroLoss()
         
-        # 训练数据缓冲区
-        self.buffer = SelfPlayBuffer(max_size=buffer_size)
+        # 训练数据缓冲区（传入棋盘大小以支持数据增强动态处理）
+        self.buffer = SelfPlayBuffer(max_size=buffer_size, board_size=board_size)
         
         # 训练统计
         self.training_stats = {
@@ -353,7 +353,7 @@ if __name__ == "__main__":
     print("测试训练系统...")
     
     trainer = AlphaZeroTrainer(
-        board_size=15,
+        board_size=Config.BOARD_SIZE,
         num_channels=64,
         num_res_blocks=3,
         lr=0.001

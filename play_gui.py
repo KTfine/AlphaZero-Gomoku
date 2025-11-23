@@ -25,7 +25,7 @@ class GomokuGUI:
         
         # 创建窗口
         self.screen = pygame.display.set_mode((self.window_size, self.window_size + 100))
-        pygame.display.set_caption("AlphaZero 五子棋")
+        pygame.display.set_caption("AlphaZero Gomoku")
         
         # 颜色
         self.BG_COLOR = (220, 179, 92)
@@ -69,8 +69,14 @@ class GomokuGUI:
             end_pos = (self.margin + i * self.cell_size, self.margin + self.board_width)
             pygame.draw.line(self.screen, self.LINE_COLOR, start_pos, end_pos, 2)
         
-        # 绘制星位（天元和四个角的星）
-        star_positions = [(3, 3), (3, 11), (11, 3), (11, 11), (7, 7)]
+        # 绘制星位（根据棋盘大小自适应）
+        if self.board_size == 15:
+            star_positions = [(3, 3), (3, 11), (11, 3), (11, 11), (7, 7)]
+        elif self.board_size == 9:
+            star_positions = [(2, 2), (2, 6), (6, 2), (6, 6), (4, 4)]
+        else:
+            star_positions = []  # 其他尺寸不画星位
+        
         for row, col in star_positions:
             x = self.margin + col * self.cell_size
             y = self.margin + row * self.cell_size
@@ -104,30 +110,30 @@ class GomokuGUI:
         
         if self.game.is_game_over():
             if self.game.winner == 1:
-                text = "黑棋获胜！"
+                text = "Black Wins!"
             elif self.game.winner == -1:
-                text = "白棋获胜！"
+                text = "White Wins!"
             else:
-                text = "平局！"
-            text += " 按R重新开始"
+                text = "Draw!"
+            text += " Press R to restart"
         else:
             if self.game.current_player == 1:
-                text = "当前: 黑棋"
+                text = "Current: Black"
             else:
-                text = "当前: 白棋"
+                text = "Current: White"
             
             if not self.ai_vs_ai:
                 if self.game.current_player == self.human_player:
-                    text += " (您的回合)"
+                    text += " (Your turn)"
                 else:
-                    text += " (AI思考中...)"
+                    text += " (AI thinking...)"
         
         text_surface = self.font.render(text, True, self.TEXT_COLOR)
         text_rect = text_surface.get_rect(center=(self.window_size // 2, y_offset))
         self.screen.blit(text_surface, text_rect)
         
         # 控制说明
-        help_text = "R: 重新开始 | A: AI对战 | H: 人机对战 | Q: 退出"
+        help_text = "R: Restart | A: AI vs AI | H: Human vs AI | B: Switch side | Q: Quit"
         help_surface = self.small_font.render(help_text, True, self.TEXT_COLOR)
         help_rect = help_surface.get_rect(center=(self.window_size // 2, y_offset + 35))
         self.screen.blit(help_surface, help_rect)
@@ -182,16 +188,16 @@ class GomokuGUI:
                     elif event.key == pygame.K_a:
                         self.ai_vs_ai = True
                         self.reset_game()
-                        print("切换到AI对战模式")
+                        print("Switched to AI vs AI mode")
                     elif event.key == pygame.K_h:
                         self.ai_vs_ai = False
                         self.reset_game()
-                        print("切换到人机对战模式")
+                        print("Switched to Human vs AI mode")
                     elif event.key == pygame.K_b:
                         self.human_player = -self.human_player
                         self.reset_game()
-                        role = "黑棋(先手)" if self.human_player == 1 else "白棋(后手)"
-                        print(f"切换为人类执{role}")
+                        role = "Black (first)" if self.human_player == 1 else "White (second)"
+                        print(f"Switched to play as {role}")
                     elif event.key == pygame.K_q:
                         running = False
                 
@@ -201,7 +207,7 @@ class GomokuGUI:
                         if pos is not None:
                             row, col = pos
                             if self.game.make_move(row, col):
-                                print(f"玩家落子: ({row}, {col})")
+                                print(f"Player move: ({row}, {col})")
             
             # AI自动落子
             if not self.game.is_game_over():
@@ -236,16 +242,16 @@ def play_with_model(model_path=None):
         import torch
         from network import AlphaZeroNet
         
-        print(f"加载模型: {model_path}")
+        print(f"Loading model: {model_path}")
         model = AlphaZeroNet(board_size=Config.BOARD_SIZE, 
                             num_channels=Config.NUM_CHANNELS, 
                             num_res_blocks=Config.NUM_RES_BLOCKS)
         checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()
-        print("模型加载成功！")
+        print("Model loaded successfully!")
     else:
-        print("使用纯MCTS（未加载神经网络）")
+        print("Using pure MCTS (no neural network)")
     
     # 启动GUI
     gui = GomokuGUI(board_size=Config.BOARD_SIZE, model=model)
